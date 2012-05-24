@@ -243,7 +243,11 @@ module Bundler
           fetchers              = sources.keys
           api_fetchers          = fetchers.select {|fetcher| fetcher.has_api }
           modern_index_fetchers = fetchers - api_fetchers
-          if api_fetchers.any? && modern_index_fetchers.all? {|fetcher| sources[fetcher] < FORCE_MODERN_INDEX_LIMIT }
+          limit_exceeding_modern_index_fetchers = modern_index_fetchers.select {|f| sources[f] > FORCE_MODERN_INDEX_LIMIT}
+          limit_exceeding_modern_index_fetchers.each {|f| f.disable_endpoint = true}
+          if limit_exceeding_modern_index_fetchers.any?
+            api_fetchers.each {|fetcher| idx.use fetcher.specs([], self) }
+          else
             # this will fetch all the specifications on the rubygems repo
             unmet_dependency_names = idx.unmet_dependency_names
             unmet_dependency_names -= ['bundler'] # bundler will always be unmet
@@ -254,9 +258,6 @@ module Bundler
                 idx.use fetcher.specs(unmet_dependency_names, self)
               end
             end
-          else
-            Bundler::Fetcher.disable_endpoint = true
-            api_fetchers.each {|fetcher| idx.use fetcher.specs([], self) }
           end
 
           idx

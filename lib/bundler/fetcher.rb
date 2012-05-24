@@ -7,6 +7,7 @@ module Bundler
     REDIRECT_LIMIT = 5
 
     attr_reader :has_api
+    attr_accessor :disable_endpoint
 
     class << self
       attr_accessor :disable_endpoint
@@ -61,7 +62,7 @@ module Bundler
     def specs(gem_names, source)
       index = Index.new
 
-      if !gem_names || @remote_uri.scheme == "file" || Bundler::Fetcher.disable_endpoint
+      if !gem_names || @remote_uri.scheme == "file" || disable_endpoint || Bundler::Fetcher.disable_endpoint
         Bundler.ui.info "Fetching source index from #{strip_user_pass_from_uri(@remote_uri)}"
         specs = fetch_all_remote_specs
       else
